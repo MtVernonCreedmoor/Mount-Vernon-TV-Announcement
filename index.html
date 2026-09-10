@@ -1,0 +1,563 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Mount Vernon TV Announcements</title>
+
+  <style>
+    * { box-sizing: border-box; }
+
+    html, body {
+      width: 100%;
+      height: 100%;
+      margin: 0;
+      overflow: hidden;
+      background: #160d24;
+      font-family: Arial, Helvetica, sans-serif;
+      color: #fff;
+    }
+
+    body {
+      background:
+        linear-gradient(115deg, rgba(22, 9, 38, .88), rgba(75, 46, 131, .64)),
+        url("assets/sanctuary.jpg") center center / cover no-repeat;
+    }
+
+    .stage {
+      position: relative;
+      width: 100vw;
+      height: 100vh;
+      overflow: hidden;
+    }
+
+    .brand {
+      position: absolute;
+      top: 3.3vh;
+      left: 3.3vw;
+      right: 3.3vw;
+      z-index: 10;
+      display: flex;
+      align-items: center;
+      gap: 1.2vw;
+    }
+
+    .brand img {
+      width: 5.1vw;
+      max-width: 94px;
+      min-width: 58px;
+      height: auto;
+      filter: drop-shadow(0 5px 12px rgba(0,0,0,.28));
+    }
+
+    .brand-text {
+      min-width: 0;
+    }
+
+    .church-name {
+      margin: 0;
+      font-size: clamp(18px, 1.55vw, 30px);
+      font-weight: 800;
+      letter-spacing: .035em;
+      text-transform: uppercase;
+    }
+
+    .church-location {
+      margin-top: .35vh;
+      color: rgba(255,255,255,.75);
+      font-size: clamp(12px, .85vw, 17px);
+      font-weight: 600;
+    }
+
+    .slide {
+      position: absolute;
+      inset: 0;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      padding: 15vh 7vw 11vh;
+      opacity: 0;
+      transform: translateX(4vw) scale(.985);
+      transition:
+        opacity 850ms ease,
+        transform 850ms cubic-bezier(.2,.8,.2,1);
+      pointer-events: none;
+    }
+
+    .slide.active {
+      opacity: 1;
+      transform: translateX(0) scale(1);
+    }
+
+    .card {
+      width: min(86vw, 1460px);
+      min-height: 48vh;
+      padding: clamp(34px, 4.8vw, 82px);
+      display: flex;
+      flex-direction: column;
+      justify-content: center;
+      border: 1px solid rgba(255,255,255,.24);
+      border-radius: 2.2vw;
+      background:
+        linear-gradient(135deg, rgba(255,255,255,.97), rgba(247,244,249,.94));
+      color: #211234;
+      box-shadow: 0 28px 80px rgba(0,0,0,.28);
+      backdrop-filter: blur(8px);
+    }
+
+    .eyebrow {
+      margin-bottom: 1.6vh;
+      color: #a47c00;
+      font-size: clamp(16px, 1.35vw, 26px);
+      font-weight: 900;
+      letter-spacing: .13em;
+      text-transform: uppercase;
+    }
+
+    .title {
+      margin: 0;
+      color: #32195f;
+      font-size: clamp(44px, 5.2vw, 96px);
+      line-height: 1.02;
+      letter-spacing: -.035em;
+    }
+
+    .body {
+      margin-top: 3.2vh;
+      font-size: clamp(28px, 3.0vw, 56px);
+      line-height: 1.22;
+      font-weight: 700;
+    }
+
+    .body.long {
+      font-size: clamp(24px, 2.45vw, 46px);
+      line-height: 1.26;
+    }
+
+    .body.list {
+      display: grid;
+      gap: 1.25vh;
+    }
+
+    .body.list div {
+      position: relative;
+      padding-left: 1.55em;
+    }
+
+    .body.list div::before {
+      content: "";
+      position: absolute;
+      left: .25em;
+      top: .55em;
+      width: .34em;
+      height: .34em;
+      border-radius: 50%;
+      background: #d4af37;
+    }
+
+    .welcome-card {
+      text-align: center;
+      align-items: center;
+    }
+
+    .welcome-card .title {
+      max-width: 1150px;
+    }
+
+    .welcome-card .body {
+      max-width: 1000px;
+      color: #4b4054;
+      font-weight: 600;
+    }
+
+    .motto {
+      margin-top: 3vh;
+      color: #755b07;
+      font-family: Georgia, "Times New Roman", serif;
+      font-size: clamp(22px, 1.9vw, 36px);
+      font-style: italic;
+      font-weight: 700;
+    }
+
+    .updated {
+      position: absolute;
+      right: 3.3vw;
+      bottom: 7.8vh;
+      z-index: 12;
+      color: rgba(255,255,255,.7);
+      font-size: clamp(10px, .75vw, 15px);
+      font-weight: 700;
+    }
+
+    .ticker {
+      position: absolute;
+      left: 0;
+      right: 0;
+      bottom: 0;
+      z-index: 20;
+      height: 5.6vh;
+      min-height: 46px;
+      overflow: hidden;
+      display: flex;
+      align-items: center;
+      border-top: 2px solid rgba(212,175,55,.8);
+      background: rgba(26,13,47,.96);
+      white-space: nowrap;
+    }
+
+    .ticker-track {
+      display: inline-flex;
+      min-width: max-content;
+      animation: ticker 50s linear infinite;
+      color: #f7ebc0;
+      font-size: clamp(16px, 1.25vw, 24px);
+      font-weight: 800;
+      letter-spacing: .08em;
+      text-transform: uppercase;
+    }
+
+    .ticker-track span {
+      padding-right: 7vw;
+    }
+
+    @keyframes ticker {
+      from { transform: translateX(100vw); }
+      to   { transform: translateX(-100%); }
+    }
+
+    .progress {
+      position: absolute;
+      left: 0;
+      bottom: 5.6vh;
+      z-index: 21;
+      width: 0;
+      height: 4px;
+      background: #d4af37;
+    }
+
+    .progress.run {
+      animation: progress 9s linear forwards;
+    }
+
+    @keyframes progress {
+      from { width: 0; }
+      to { width: 100%; }
+    }
+
+    @media (max-aspect-ratio: 4/3) {
+      .slide { padding-left: 5vw; padding-right: 5vw; }
+      .card { width: 90vw; }
+    }
+  </style>
+</head>
+
+<body>
+  <main class="stage" id="stage">
+    <div class="brand">
+      <img
+        src="assets/mount-vernon-logo.png"
+        alt="Mount Vernon Missionary Baptist Church logo">
+
+      <div class="brand-text">
+        <p class="church-name">Mount Vernon Missionary Baptist Church</p>
+        <div class="church-location">Creedmoor, North Carolina</div>
+      </div>
+    </div>
+
+    <div id="slides">
+      <section class="slide active" id="loadingSlide">
+        <article class="card welcome-card">
+          <div class="eyebrow">Mount Vernon Missionary Baptist Church</div>
+          <h1 class="title">Loading Announcements</h1>
+          <div class="body">Please stand by.</div>
+        </article>
+      </section>
+    </div>
+    <div class="updated" id="updated"></div>
+    <div class="progress" id="progress"></div>
+
+    <div class="ticker" aria-hidden="true">
+      <div class="ticker-track">
+        <span>Welcome to Mount Vernon Missionary Baptist Church</span>
+        <span>One Heart, One Soul, One Vision, One Church</span>
+        <span>Sunday School begins at 9:30 AM every Sunday morning.</span>
+        <span>Worship Service begins at 11:00 AM every Sunday morning.</span>
+        <span>We have Children's Church upstairs every Sunday except for 2nd Sunday.</span>
+        <span>Prayer Meeting is every Monday night at 7:00 PM</span>
+        <span>Bible Study every Wednesday at 7:00 PM by Zoom.</span>
+        <span>Noonday Bible Study every Thursday at 12:00 PM in the Fellowship Hall.</span>
+        <span>Stay connected at mvmbc.org</span>
+      </div>
+    </div>
+  </main>
+
+  <script>
+    /* =========================================================
+       EASY SETTINGS
+       ---------------------------------------------------------
+       9000 = each slide stays on screen for 9 seconds.
+       300000 = checks for new Form data every 5 minutes
+       WITHOUT reloading the page or interrupting the display.
+       ========================================================= */
+    const SLIDE_MS = 9000;
+    const REFRESH_MS = 300000;
+    const FEED_URL = "https://script.google.com/macros/s/AKfycby-2U0G7-HSZ_jgGe3gXUGRs_IkBUUILNxQ_MXHshFgcNcGV_Pt2Y7ziA23rbsFvuIx/exec";
+
+    let DATA = null;
+    let rotationTimer = null;
+
+
+    function splitLines(value) {
+      return String(value || "")
+        .split(/\r?\n/)
+        .map(line => line.trim())
+        .filter(Boolean);
+    }
+
+
+    function chunk(items, size) {
+      const groups = [];
+
+      for (let i = 0; i < items.length; i += size) {
+        groups.push(items.slice(i, i + size));
+      }
+
+      return groups;
+    }
+
+
+    function escapeHTML(value) {
+      return String(value || "")
+        .replace(/&/g, "&amp;")
+        .replace(/</g, "&lt;")
+        .replace(/>/g, "&gt;")
+        .replace(/"/g, "&quot;")
+        .replace(/'/g, "&#039;");
+    }
+
+
+    function addSlide(slides, eyebrow, title, body, options) {
+      slides.push({
+        eyebrow: eyebrow || "",
+        title: title || "",
+        body: body || "",
+        list: options && options.list ? true : false,
+        welcome: options && options.welcome ? true : false
+      });
+    }
+
+
+    function buildSlides() {
+      const slides = [];
+
+      addSlide(
+        slides,
+        "This Week",
+        "Mount Vernon Announcements",
+        "Stay connected with what is happening in our church family.",
+        { welcome: true }
+      );
+
+      splitLines(DATA.announcements).forEach(item => {
+        addSlide(slides, "This Week", "Announcement", item);
+      });
+
+      chunk(splitLines(DATA.birthdays), 4).forEach(group => {
+        addSlide(
+          slides,
+          "Celebrating Our Church Family",
+          "Birthdays",
+          group,
+          { list: true }
+        );
+      });
+
+      chunk(splitLines(DATA.anniversaries), 4).forEach(group => {
+        addSlide(
+          slides,
+          "Celebrating Our Church Family",
+          "Anniversaries",
+          group,
+          { list: true }
+        );
+      });
+
+      chunk(splitLines(DATA.sickAndShutIn), 5).forEach(group => {
+        addSlide(
+          slides,
+          "Keep Them in Prayer",
+          "Sick & Shut-In",
+          group,
+          { list: true }
+        );
+      });
+
+      splitLines(DATA.upcomingEvents).forEach(item => {
+        addSlide(slides, "Stay Connected", "Upcoming Event", item);
+      });
+
+      if (slides.length === 1) {
+        addSlide(
+          slides,
+          "This Week",
+          "Stay Connected",
+          "No weekly announcements have been posted yet."
+        );
+      }
+
+      addSlide(
+        slides,
+        "Mount Vernon Missionary Baptist Church",
+        "We Are Glad You're Here",
+        "Worship with us, stay connected, and keep our church family in prayer.",
+        { welcome: true }
+      );
+
+      return slides;
+    }
+
+
+    function renderSlides(slides) {
+      const container = document.getElementById("slides");
+
+      container.innerHTML = slides.map((slide, index) => {
+        const isList = slide.list && Array.isArray(slide.body);
+
+        const bodyHTML = isList
+          ? slide.body.map(item => `<div>${escapeHTML(item)}</div>`).join("")
+          : escapeHTML(slide.body);
+
+        const bodyLength = isList
+          ? slide.body.join(" ").length
+          : String(slide.body || "").length;
+
+        const bodyClasses = ["body"];
+
+        if (isList) bodyClasses.push("list");
+        if (bodyLength > 145) bodyClasses.push("long");
+
+        return `
+          <section class="slide ${index === 0 ? "active" : ""}">
+            <article class="card ${slide.welcome ? "welcome-card" : ""}">
+              <div class="eyebrow">${escapeHTML(slide.eyebrow)}</div>
+              <h1 class="title">${escapeHTML(slide.title)}</h1>
+              <div class="${bodyClasses.join(" ")}">${bodyHTML}</div>
+              ${slide.welcome ?
+                '<div class="motto">One Heart, One Soul, One Vision, One Church</div>' :
+                ''}
+            </article>
+          </section>
+        `;
+      }).join("");
+    }
+
+
+    function startRotation(slides) {
+      if (!slides.length) return;
+
+      const elements = Array.from(document.querySelectorAll(".slide"));
+      const progress = document.getElementById("progress");
+      let current = 0;
+
+      function restartProgress() {
+        progress.classList.remove("run");
+        void progress.offsetWidth;
+        progress.classList.add("run");
+      }
+
+      restartProgress();
+
+      if (rotationTimer) {
+        clearInterval(rotationTimer);
+      }
+
+      rotationTimer = setInterval(() => {
+        elements[current].classList.remove("active");
+        current = (current + 1) % elements.length;
+        elements[current].classList.add("active");
+        restartProgress();
+      }, SLIDE_MS);
+    }
+
+
+    function applyData(data) {
+      DATA = data;
+
+      const slides = buildSlides();
+      renderSlides(slides);
+      startRotation(slides);
+
+      document.getElementById("updated").textContent =
+        DATA.timestamp ? "Updated: " + DATA.timestamp : "";
+    }
+
+
+    function showLoadError() {
+      const container = document.getElementById("slides");
+
+      container.innerHTML = `
+        <section class="slide active">
+          <article class="card welcome-card">
+            <div class="eyebrow">Mount Vernon Missionary Baptist Church</div>
+            <h1 class="title">Announcements Unavailable</h1>
+            <div class="body long">
+              The latest announcements could not be loaded. Please check the internet connection and try again.
+            </div>
+          </article>
+        </section>
+      `;
+    }
+
+
+    window.mvTvRefreshCallback = function(data) {
+      if (!data || data.success !== true) {
+        if (!DATA) showLoadError();
+        return;
+      }
+
+      const oldTimestamp = DATA && DATA.timestamp ? String(DATA.timestamp) : "";
+      const newTimestamp = data.timestamp ? String(data.timestamp) : "";
+
+      // First load always renders. Later checks only redraw if a
+      // newer Google Form submission is actually available.
+      if (!DATA || newTimestamp !== oldTimestamp) {
+        applyData(data);
+      }
+    };
+
+
+    function refreshDataInBackground() {
+      const oldScript = document.getElementById("mvTvRefreshScript");
+      if (oldScript) oldScript.remove();
+
+      const script = document.createElement("script");
+      script.id = "mvTvRefreshScript";
+      script.src =
+        FEED_URL +
+        "?callback=mvTvRefreshCallback&_=" +
+        Date.now();
+
+      // On first load, show an error. On later refresh failures,
+      // keep the current announcements running instead of blanking.
+      script.onerror = function() {
+        if (!DATA) showLoadError();
+        script.remove();
+      };
+
+      script.onload = function() {
+        script.remove();
+      };
+
+      document.body.appendChild(script);
+    }
+
+
+    // Initial load from the existing Mount Vernon Apps Script data feed.
+    refreshDataInBackground();
+
+    // Check quietly every five minutes. There is NO page reload,
+    // so there is no white screen between checks.
+    setInterval(refreshDataInBackground, REFRESH_MS);
+  </script>
+</body>
+</html>
