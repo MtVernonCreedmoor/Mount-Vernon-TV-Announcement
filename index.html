@@ -203,7 +203,18 @@
       font-style: italic;
       font-weight: 700;
     }
-.ticker {
+
+    .updated {
+      position: absolute;
+      right: 3.3vw;
+      bottom: 7.8vh;
+      z-index: 12;
+      color: rgba(255,255,255,.7);
+      font-size: clamp(10px, .75vw, 15px);
+      font-weight: 700;
+    }
+
+    .ticker {
       position: absolute;
       left: 0;
       right: 0;
@@ -291,6 +302,7 @@
         </article>
       </section>
     </div>
+    <div class="updated" id="updated"></div>
     <div class="progress" id="progress"></div>
 
     <div class="ticker" aria-hidden="true">
@@ -603,6 +615,8 @@
       renderSlides(slides);
       startRotation(slides);
 
+      document.getElementById("updated").textContent =
+        DATA.timestamp ? "Updated: " + DATA.timestamp : "";
     }
 
 
