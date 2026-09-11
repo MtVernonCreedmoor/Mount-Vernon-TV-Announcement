@@ -105,6 +105,31 @@
       backdrop-filter: blur(8px);
     }
 
+
+    /* 16:9 ministry flyer slides use the existing sanctuary background,
+       church branding, ticker, and progress bar — but no white text card. */
+    .flyer-slide {
+      padding: 11.8vh 4.5vw 7.5vh;
+    }
+
+    .flyer-frame {
+      width: min(88vw, calc(76vh * 16 / 9));
+      aspect-ratio: 16 / 9;
+      overflow: hidden;
+      border: 1px solid rgba(255,255,255,.22);
+      border-radius: clamp(14px, 1.3vw, 26px);
+      background: rgba(15,7,28,.30);
+      box-shadow: 0 28px 70px rgba(0,0,0,.40);
+    }
+
+    .flyer-frame img {
+      width: 100%;
+      height: 100%;
+      display: block;
+      object-fit: contain;
+      object-position: center;
+    }
+
     .eyebrow {
       margin-bottom: 1.6vh;
       color: #a47c00;
@@ -236,7 +261,9 @@
     }
 
     .progress.run {
-      animation: progress 9s linear forwards;
+      animation-name: progress;
+      animation-timing-function: linear;
+      animation-fill-mode: forwards;
     }
 
     @keyframes progress {
@@ -247,6 +274,8 @@
     @media (max-aspect-ratio: 4/3) {
       .slide { padding-left: 5vw; padding-right: 5vw; }
       .card { width: 90vw; }
+      .flyer-slide { padding-left: 4vw; padding-right: 4vw; }
+      .flyer-frame { width: min(92vw, calc(72vh * 16 / 9)); }
     }
   </style>
 </head>
@@ -295,15 +324,21 @@
     /* =========================================================
        EASY SETTINGS
        ---------------------------------------------------------
-       9000 = each slide stays on screen for 9 seconds.
-       300000 = checks for new Form data every 5 minutes
+       9000  = each text slide stays on screen for 9 seconds.
+       14000 = each 16:9 ministry flyer stays on screen for 14 seconds.
+       300000 = checks both live feeds every 5 minutes
        WITHOUT reloading the page or interrupting the display.
        ========================================================= */
-    const SLIDE_MS = 9000;
+    const TEXT_SLIDE_MS = 9000;
+    const FLYER_SLIDE_MS = 14000;
     const REFRESH_MS = 300000;
+
     const FEED_URL = "https://script.google.com/macros/s/AKfycby-2U0G7-HSZ_jgGe3gXUGRs_IkBUUILNxQ_MXHshFgcNcGV_Pt2Y7ziA23rbsFvuIx/exec";
+    const FLYER_FEED_URL = "https://script.google.com/macros/s/AKfycbyb9KjxRLB3LNA7mHxgp2MOWLKI-yO8ghZ7eN38bNmzJEMLtzCIR9Sp42xo7FimKAQfXw/exec";
 
     let DATA = null;
+    let FLYER_DATA = { success: true, flyers: [] };
+    let FLYER_SIGNATURE = "[]";
     let rotationTimer = null;
 
 
@@ -338,12 +373,69 @@
 
     function addSlide(slides, eyebrow, title, body, options) {
       slides.push({
+        type: "text",
+        duration: TEXT_SLIDE_MS,
         eyebrow: eyebrow || "",
         title: title || "",
         body: body || "",
         list: options && options.list ? true : false,
         welcome: options && options.welcome ? true : false
       });
+    }
+
+
+    function createFlyerSlide(flyer) {
+      return {
+        type: "flyer",
+        duration: FLYER_SLIDE_MS,
+        name: flyer && flyer.name ? String(flyer.name) : "Mount Vernon Event",
+        imageUrl: flyer && flyer.imageUrl ? String(flyer.imageUrl) : "",
+        fallbackUrl: flyer && flyer.fallbackUrl ? String(flyer.fallbackUrl) : ""
+      };
+    }
+
+
+    function distributeFlyers(textSlides, flyers) {
+      if (!flyers.length || textSlides.length < 2) {
+        return textSlides;
+      }
+
+      const intro = textSlides[0];
+      const outro = textSlides[textSlides.length - 1];
+      const content = textSlides.slice(1, -1);
+      const flyerSlides = flyers.map(createFlyerSlide);
+
+      if (!content.length) {
+        return [intro, ...flyerSlides, outro];
+      }
+
+      const groups = Array.from(
+        { length: flyerSlides.length + 1 },
+        () => []
+      );
+
+      content.forEach((slide, index) => {
+        const groupIndex = Math.min(
+          groups.length - 1,
+          Math.floor(index * groups.length / content.length)
+        );
+
+        groups[groupIndex].push(slide);
+      });
+
+      const mixed = [intro];
+
+      groups.forEach((group, index) => {
+        mixed.push(...group);
+
+        if (index < flyerSlides.length) {
+          mixed.push(flyerSlides[index]);
+        }
+      });
+
+      mixed.push(outro);
+
+      return mixed;
     }
 
 
@@ -413,7 +505,13 @@
         { welcome: true }
       );
 
-      return slides;
+      const activeFlyers =
+        FLYER_DATA &&
+        Array.isArray(FLYER_DATA.flyers)
+          ? FLYER_DATA.flyers.filter(flyer => flyer && flyer.imageUrl)
+          : [];
+
+      return distributeFlyers(slides, activeFlyers);
     }
 
 
@@ -421,6 +519,27 @@
       const container = document.getElementById("slides");
 
       container.innerHTML = slides.map((slide, index) => {
+        const activeClass = index === 0 ? "active" : "";
+
+        if (slide.type === "flyer") {
+          const imageUrl = escapeHTML(slide.imageUrl);
+          const fallbackUrl = escapeHTML(slide.fallbackUrl);
+          const fallbackHandler = fallbackUrl
+            ? `onerror="this.onerror=null;this.src='${fallbackUrl}'"`
+            : "";
+
+          return `
+            <section class="slide flyer-slide ${activeClass}">
+              <div class="flyer-frame">
+                <img
+                  src="${imageUrl}"
+                  alt="${escapeHTML(slide.name)}"
+                  ${fallbackHandler}>
+              </div>
+            </section>
+          `;
+        }
+
         const isList = slide.list && Array.isArray(slide.body);
 
         const bodyHTML = isList
@@ -437,7 +556,7 @@
         if (bodyLength > 145) bodyClasses.push("long");
 
         return `
-          <section class="slide ${index === 0 ? "active" : ""}">
+          <section class="slide ${activeClass}">
             <article class="card ${slide.welcome ? "welcome-card" : ""}">
               <div class="eyebrow">${escapeHTML(slide.eyebrow)}</div>
               <h1 class="title">${escapeHTML(slide.title)}</h1>
@@ -459,29 +578,38 @@
       const progress = document.getElementById("progress");
       let current = 0;
 
-      function restartProgress() {
+      if (rotationTimer) {
+        clearTimeout(rotationTimer);
+      }
+
+      function restartProgress(duration) {
         progress.classList.remove("run");
+        progress.style.animationDuration = duration + "ms";
         void progress.offsetWidth;
         progress.classList.add("run");
       }
 
-      restartProgress();
+      function scheduleCurrentSlide() {
+        const duration =
+          Number(slides[current].duration) ||
+          TEXT_SLIDE_MS;
 
-      if (rotationTimer) {
-        clearInterval(rotationTimer);
+        restartProgress(duration);
+
+        rotationTimer = setTimeout(() => {
+          elements[current].classList.remove("active");
+          current = (current + 1) % elements.length;
+          elements[current].classList.add("active");
+          scheduleCurrentSlide();
+        }, duration);
       }
 
-      rotationTimer = setInterval(() => {
-        elements[current].classList.remove("active");
-        current = (current + 1) % elements.length;
-        elements[current].classList.add("active");
-        restartProgress();
-      }, SLIDE_MS);
+      scheduleCurrentSlide();
     }
 
 
-    function applyData(data) {
-      DATA = data;
+    function applyPresentation() {
+      if (!DATA) return;
 
       const slides = buildSlides();
       renderSlides(slides);
@@ -489,6 +617,12 @@
 
       document.getElementById("updated").textContent =
         DATA.timestamp ? "Updated: " + DATA.timestamp : "";
+    }
+
+
+    function applyData(data) {
+      DATA = data;
+      applyPresentation();
     }
 
 
@@ -526,6 +660,34 @@
     };
 
 
+    window.mvFlyersCallback = function(data) {
+      if (!data || data.success !== true || !Array.isArray(data.flyers)) {
+        return;
+      }
+
+      const newSignature = JSON.stringify(
+        data.flyers.map(flyer => ({
+          name: flyer && flyer.name ? String(flyer.name) : "",
+          fileId: flyer && flyer.fileId ? String(flyer.fileId) : "",
+          startDate: flyer && flyer.startDate ? String(flyer.startDate) : "",
+          endDate: flyer && flyer.endDate ? String(flyer.endDate) : "",
+          imageUrl: flyer && flyer.imageUrl ? String(flyer.imageUrl) : ""
+        }))
+      );
+
+      const changed = newSignature !== FLYER_SIGNATURE;
+
+      FLYER_DATA = data;
+      FLYER_SIGNATURE = newSignature;
+
+      // If active flyers changed, rebuild the current presentation.
+      // If the flyer feed arrives before the announcement feed, wait.
+      if (changed && DATA) {
+        applyPresentation();
+      }
+    };
+
+
     function refreshDataInBackground() {
       const oldScript = document.getElementById("mvTvRefreshScript");
       if (oldScript) oldScript.remove();
@@ -552,12 +714,38 @@
     }
 
 
-    // Initial load from the existing Mount Vernon Apps Script data feed.
-    refreshDataInBackground();
+    function refreshFlyerDataInBackground() {
+      const oldScript = document.getElementById("mvTvFlyerRefreshScript");
+      if (oldScript) oldScript.remove();
 
-    // Check quietly every five minutes. There is NO page reload,
+      const script = document.createElement("script");
+      script.id = "mvTvFlyerRefreshScript";
+      script.src =
+        FLYER_FEED_URL +
+        "?callback=mvFlyersCallback&_=" +
+        Date.now();
+
+      // Flyer-feed failures never interrupt the text announcements.
+      script.onerror = function() {
+        script.remove();
+      };
+
+      script.onload = function() {
+        script.remove();
+      };
+
+      document.body.appendChild(script);
+    }
+
+
+    // Initial load from both Mount Vernon Apps Script data feeds.
+    refreshDataInBackground();
+    refreshFlyerDataInBackground();
+
+    // Check both feeds quietly every five minutes. There is NO page reload,
     // so there is no white screen between checks.
     setInterval(refreshDataInBackground, REFRESH_MS);
+    setInterval(refreshFlyerDataInBackground, REFRESH_MS);
   </script>
 </body>
 </html>
