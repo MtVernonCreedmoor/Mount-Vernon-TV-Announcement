@@ -99,7 +99,7 @@
       border: 1px solid rgba(255,255,255,.24);
       border-radius: 2.2vw;
       background:
-        linear-gradient(135deg, rgba(255,255,255,.97), rgba(247,244,249,.94));
+        linear-gradient(135deg, rgba(255,255,255,.70), rgba(240,235,245,.65));
       color: #211234;
       box-shadow: 0 28px 80px rgba(0,0,0,.28);
       backdrop-filter: blur(8px);
@@ -203,18 +203,7 @@
       font-style: italic;
       font-weight: 700;
     }
-
-    .updated {
-      position: absolute;
-      right: 3.3vw;
-      bottom: 7.8vh;
-      z-index: 12;
-      color: rgba(255,255,255,.7);
-      font-size: clamp(10px, .75vw, 15px);
-      font-weight: 700;
-    }
-
-    .ticker {
+.ticker {
       position: absolute;
       left: 0;
       right: 0;
@@ -302,7 +291,6 @@
         </article>
       </section>
     </div>
-    <div class="updated" id="updated"></div>
     <div class="progress" id="progress"></div>
 
     <div class="ticker" aria-hidden="true">
@@ -615,8 +603,6 @@
       renderSlides(slides);
       startRotation(slides);
 
-      document.getElementById("updated").textContent =
-        DATA.timestamp ? "Updated: " + DATA.timestamp : "";
     }
 
 
