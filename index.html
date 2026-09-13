@@ -313,12 +313,16 @@
     /* =========================================================
        EASY SETTINGS
        ---------------------------------------------------------
-       9000  = each text slide stays on screen for 9 seconds.
+       12000 = minimum time for a text slide (12 seconds).
+       Longer text gets more time at 150 words per minute,
+       plus 4 seconds to notice the slide and read its heading.
        14000 = each 16:9 ministry flyer stays on screen for 14 seconds.
        300000 = checks both live feeds every 5 minutes
        WITHOUT reloading the page or interrupting the display.
        ========================================================= */
-    const TEXT_SLIDE_MS = 9000;
+    const TEXT_SLIDE_MS = 12000;
+    const TEXT_WORDS_PER_MINUTE = 150;
+    const TEXT_READING_BUFFER_MS = 4000;
     const FLYER_SLIDE_MS = 14000;
     const REFRESH_MS = 300000;
 
@@ -360,10 +364,25 @@
     }
 
 
+    function textSlideDuration(body) {
+      const text = Array.isArray(body)
+        ? body.join(" ")
+        : String(body || "");
+      const words = text.trim().split(/\s+/).filter(Boolean).length;
+      const readingTime = words * 60000 / TEXT_WORDS_PER_MINUTE;
+
+      // Round up to whole seconds; long notices have no fixed time cap.
+      return Math.max(
+        TEXT_SLIDE_MS,
+        Math.ceil((readingTime + TEXT_READING_BUFFER_MS) / 1000) * 1000
+      );
+    }
+
+
     function addSlide(slides, eyebrow, title, body, options) {
       slides.push({
         type: "text",
-        duration: TEXT_SLIDE_MS,
+        duration: textSlideDuration(body),
         eyebrow: eyebrow || "",
         title: title || "",
         body: body || "",
